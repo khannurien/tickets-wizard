@@ -1,21 +1,27 @@
 DIRS=bin obj
 
-all: twd twc
+all: places concert achat
 
-twd: obj/twd.o
-	gcc -o bin/twd obj/twd.o
+places: obj/places.o
+	gcc -o bin/places obj/places.o
 
-obj/twd.o: src/twd.c
-	gcc -c src/twd.c -o obj/twd.o
+obj/places.o: src/places.c
+	gcc -c src/places.c -o obj/places.o
 
-twc: obj/twc.o
-	gcc -o bin/twc obj/twc.o
+concert: obj/concert.o
+	gcc -o bin/concert obj/concert.o
 
-obj/twc.o: src/twc.c
-	gcc -c src/twc.c -o obj/twc.o
+obj/concert.o: src/concert.c
+	gcc -c src/concert.c -o obj/concert.o
+
+achat: obj/achat.o
+	gcc -o bin/achat obj/achat.o
+
+obj/achat.o: src/achat.c
+	gcc -c src/achat.c -o obj/achat.o
 
 clean:
-	rm bin/twd bin/twc obj/*.o; \
+	rm bin/places bin/concert bin/achat obj/*.o; \
 	rmdir $(DIRS)
 
 $(info $(shell mkdir -p $(DIRS)))
