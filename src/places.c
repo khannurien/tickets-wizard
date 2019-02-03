@@ -31,20 +31,17 @@
  * 
  */
 
-#define BUFSIZE 8
-#define NBPLACES 100
+#define BUFSIZE sizeof(int)
+int NBPLACES = 100;
 
 int main(int argc, char * argv[]) {
 	if (argc != 2) {
-		printf("Usage: %s <port>", argv[0]);
+		printf("Usage: %s <port>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	// compteur de places
-	int cpt;
-	cpt = NBPLACES;
 	// buffer
-	char buf[BUFSIZE];
+	int buf;
 
 	// port
 	unsigned short port;
@@ -60,7 +57,7 @@ int main(int argc, char * argv[]) {
 	// création socket RDV
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	
 	// préparation adresse locale
@@ -85,7 +82,7 @@ int main(int argc, char * argv[]) {
 	// boucle d'attente de connexion
 	while(1) {
 		printf("PLACES\n");
-		printf("Disponibles : %d\n", cpt);
+		printf("Disponibles : %d\n", NBPLACES);
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -103,11 +100,48 @@ int main(int argc, char * argv[]) {
 		// connexion client
 		printf("Demande de CONCERT reçue...\n");
 
-		// TODO: traitement requête
-		// ...
-		// ssize_t rd;
-		// if ((rd = read(service, buf, BUFSIZE) != 0) { ... }
-		// ...
+		// réception demande client
+		ssize_t rd;
+		if ((rd = read(service, &buf, BUFSIZE)) == BUFSIZE) {
+			printf("Reçu : %d.\n", buf);
+		} else {
+			perror("read");
+			return EXIT_FAILURE;
+		}
+
+		// traitement requête
+		ssize_t wr;
+		if (buf < 0) {
+			// commande
+			if (NBPLACES == 0) {
+				// pas de dispo
+				// retourne 0
+				buf = 0;
+				printf("Pas de place disponible.\n");
+			} else if (NBPLACES <= buf) {
+				// pas assez de dispo
+				// retourne -NBPLACES
+				buf = -NBPLACES;
+				printf("Pas assez de places disponibles.\n");
+			} else {
+				// commande OK
+				// retourne buf
+				printf("Commande OK.\n");
+			}
+		} else if (buf > 0) {
+			// désistement
+			// retourne buf
+			NBPLACES += buf;
+			printf("Retour de %d places dans le tiroir !\n", buf);
+		}
+
+		// réponse au client
+		if ((wr = write(service, &buf, BUFSIZE)) == -1) {
+			perror("write");
+			return EXIT_FAILURE;
+		}
+
+		printf("Envoyé : %d.\n", buf);
 
 		// fermeture connexion client
 		close(service);
