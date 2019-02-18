@@ -31,14 +31,106 @@
  * 
  */
 
+/**
+ * Taille du buffer
+ */
 #define BUFSIZE sizeof(int)
-int NBPLACES = 100;
+
+/**
+ * Nombre de places
+ */
+const int MAXPLACES = 300;
+const int MAXCAT1 = 50;
+const int MAXCAT2 = 150;
+const int MAXCAT3 = 100;
+
+/**
+ * Tableau des places
+ * Leur valeur peut être :
+ * 	- 0 : place réservée
+ * 	- 1 : 50€
+ * 	- 2 : 30€
+ * 	- 3 : 20€
+ * Les étudiants ont droit à 20% de réduction.
+ */
+int PLACES[MAXPLACES];
+
+/**
+ * Retourne l'index dans PLACES[] de la première place disponible dans une catégorie donnée
+ */
+int firstAvailable(int cat) {
+	int i = 0;
+
+	while (PLACES[i] != cat) i++;
+
+	return i;
+}
+
+/**
+ * Retourne le nombre de places disponibles dans PLACES[]
+ */
+int nbAvailable() {
+	int i;
+	int nb = 0;
+	int nope = 0;
+
+	for (i = 0; i < MAXPLACES; i++) {
+		PLACES[i] == 0 ? nope++ : nb++;
+	}
+
+	return nb;
+}
+
+/**
+ * Retourne le nombre de places d'une catégorie donnée disponibles dans PLACES[]
+ */
+int nbAvailableInCat(int cat) {
+	int i;
+	int nb = 0;
+	int nope = 0;
+
+	for (i = 0; i < MAXPLACES; i++) {
+		PLACES[i] != cat ? nope++ : nb++;
+	}
+
+	return nb;
+}
+
+/**
+ * Ôte une place dans PLACES[]
+ * Retourne 1 en cas de succès
+ */
+int placeRemove(int cat) {
+	int i = firstAvailable(cat);
+
+	PLACES[i] = 0;
+
+	return 1;
+}
+
+/**
+ * Met une place dans PLACES[]
+ * Retourne 1 en cas de succès
+ */
+int placeAdd(int cat) {
+	int i = firstAvailable(0);
+
+	PLACES[i] = cat;
+
+	return 1;
+}
 
 int main(int argc, char * argv[]) {
 	if (argc != 2) {
 		printf("Usage: %s <port>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	// initialisation
+	int i;
+	for (i = 0; i < MAXCAT1; i++) PLACES[i] = 1;
+	for (i = 0; i < MAXCAT2; i++) PLACES[MAXCAT1 + i] = 2;
+	for (i = 0; i < MAXCAT3; i++) PLACES[MAXCAT1 + MAXCAT2 + i] = 3;
 
 	// buffer
 	int buf;
@@ -81,8 +173,10 @@ int main(int argc, char * argv[]) {
 
 	// boucle d'attente de connexion
 	while(1) {
+		int nbPlaces = nbAvailable();
+
 		printf("PLACES\n");
-		printf("Disponibles : %d\n", NBPLACES);
+		printf("Disponibles : %d\n", nbPlaces);
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -113,15 +207,15 @@ int main(int argc, char * argv[]) {
 		ssize_t wr;
 		if (buf < 0) {
 			// commande
-			if (NBPLACES == 0) {
+			if (nbPlaces == 0) {
 				// pas de dispo
 				// retourne 0
 				buf = 0;
 				printf("Pas de place disponible.\n");
-			} else if (NBPLACES <= buf) {
+			} else if (nbPlaces <= buf) {
 				// pas assez de dispo
 				// retourne -NBPLACES
-				buf = -NBPLACES;
+				buf = -nbPlaces;
 				printf("Pas assez de places disponibles.\n");
 			} else {
 				// commande OK
@@ -131,7 +225,9 @@ int main(int argc, char * argv[]) {
 		} else if (buf > 0) {
 			// désistement
 			// retourne buf
-			NBPLACES += buf;
+			// TODO: buf ne contient pas d'info sur la catégorie de la place...
+			int i;
+			for (i = 0; i < buf; i++) placeAdd(1);
 			printf("Retour de %d places dans le tiroir !\n", buf);
 		}
 

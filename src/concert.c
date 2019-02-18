@@ -23,12 +23,15 @@
  * 
  */
 
+/**
+ * Taille du buffer
+ */
 #define BUFSIZE sizeof(int)
 
 int main(int argc, char * argv[]) {
 	if (argc != 4) {
 		printf("Usage: %s <port> <PLACES hostname> <PLACES port>\n", argv[0]);
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	// buffer
@@ -62,18 +65,18 @@ int main(int argc, char * argv[]) {
 	// attachement socket RDV
 	if (bind(sock, (struct sockaddr *) & srv_addr, srv_addr_lg) == -1) {
 		perror("bind");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	// ouverture du service
 	if (listen(sock, 10) == -1) {
 		perror("listen");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	// boucle d'attente de connexion
 	while(1) {
-		printf("CONCERT\n");
+		printf("En attente de ACHAT...\n");
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -84,7 +87,7 @@ int main(int argc, char * argv[]) {
 			} else {
 				// erreur
 				perror("accept");
-				return EXIT_FAILURE;
+				exit(EXIT_FAILURE);
 			}
 		}
 
@@ -93,7 +96,7 @@ int main(int argc, char * argv[]) {
 		int pid;
 		if ((pid = fork()) == -1) {
 			perror("fork");
-			return EXIT_FAILURE;
+			exit(EXIT_FAILURE);
 		}
 
 		switch(pid) {
@@ -103,7 +106,7 @@ int main(int argc, char * argv[]) {
 					printf("Reçu : %d.\n", buf);
 				} else {
 					perror("read");
-					return EXIT_FAILURE;
+					exit(EXIT_FAILURE);
 				}
 
 				// connexion client
@@ -123,13 +126,13 @@ int main(int argc, char * argv[]) {
 				// socket local
 				if ((places_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 					perror("socket");
-					return EXIT_FAILURE;
+					exit(EXIT_FAILURE);
 				}
 
 				// adresse IP serveur
 				if ((host = gethostbyname(argv[2])) == NULL) {
 					perror("gethostbyname");
-					return EXIT_FAILURE;
+					exit(EXIT_FAILURE);
 				}
 
 				// préparation adresse serveur
@@ -141,7 +144,7 @@ int main(int argc, char * argv[]) {
 				// demande de connexion serveur
 				if (connect(places_sock, (struct sockaddr *) &places_addr, sizeof(places_addr)) == -1) {
 					perror("connect");
-					return EXIT_FAILURE;
+					exit(EXIT_FAILURE);
 				}
 
 				// connexion OK
@@ -154,7 +157,7 @@ int main(int argc, char * argv[]) {
 				close(places_sock);
 
 				// fin de l'exécution
-				return EXIT_SUCCESS;
+				exit(EXIT_SUCCESS);
 		}
 	}
 
