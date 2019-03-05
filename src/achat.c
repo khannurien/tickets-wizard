@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <strings.h>
+#include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -33,6 +34,8 @@
  * 
  */
 
+#define BUFSIZE 4
+
 int main(int argc, char * argv[]) {
 	if (argc != 3) {
 		printf("Usage: %s <CONCERT hostname> <CONCERT port>\n", argv[0]);
@@ -41,12 +44,15 @@ int main(int argc, char * argv[]) {
 
 	// boucle de demande
 	while (1) {
+		// identifiant de demande
+		int timestamp = (int) time(NULL);
 		// entrée utilisateur
 		int nbPlaces;
 		int cat;
 		int nbEtudiant;
 
 		// invite
+		// TODO: tester les valeurs entrées...
 		printf("Nouvelle commande. Combien de places ?\n");
 		scanf("%d", &nbPlaces);
 		printf("Quelle catégorie ?\n");
@@ -62,6 +68,13 @@ int main(int argc, char * argv[]) {
 		int sock;
 		struct sockaddr_in addr;
 		struct hostent * host;
+
+		// buffer
+		char buf[BUFSIZE];
+		buf[0] = timestamp;
+		buf[1] = nbPlaces;
+		buf[2] = cat;
+		buf[3] = nbEtudiant;
 
 		// socket local
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -90,10 +103,30 @@ int main(int argc, char * argv[]) {
 		// connexion OK
 		printf("Connexion acceptée.\n");
 
-		// TODO: envoi de la commande
+		// envoi de la commande
+		ssize_t wr;
+		if ((wr = write(sock, &buf, BUFSIZE)) == -1) {
+			perror("write");
+			exit(EXIT_FAILURE);
+		}
+
+		// réception de la réponse de CONCERT
+		ssize_t rd;
+		if ((rd = read(sock, &buf, BUFSIZE)) != BUFSIZE) {
+			perror("read");
+			exit(EXIT_FAILURE);
+		}
+
+		// TODO: traitement réponse
 		// ...
 
-		// fermeture connexion à PLACES
+		// TODO: demande numéro CB
+		// ...
+
+		// TODO: réponse validation paiement
+		// ...
+
+		// fermeture connexion à CONCERT
 		close(sock);
 
 		// fin de la boucle de demande

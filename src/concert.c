@@ -26,16 +26,13 @@
 /**
  * Taille du buffer
  */
-#define BUFSIZE sizeof(int)
+#define BUFSIZE 4
 
 int main(int argc, char * argv[]) {
 	if (argc != 4) {
 		printf("Usage: %s <port> <PLACES hostname> <PLACES port>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
-	// buffer
-	int buf;
 
 	// en tant que serveur CONCERT
 	// port serveur
@@ -91,6 +88,9 @@ int main(int argc, char * argv[]) {
 			}
 		}
 
+		// connexion client
+		printf("Demande d'ACHAT reçue...\n");
+
 		// réception demande client
 		// fork
 		int pid;
@@ -99,18 +99,29 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
+		// un buffer par processus
+		char buf[BUFSIZE];
+
+		// valeurs attendues dans le buffer
+		int timestamp, nbPlaces, cat, nbEtudiant;
+
 		switch(pid) {
 			// fils
 			case 0:
+				// on quitte le socket de RDV
+				close(sock);
+
+				// lecture de la demande d'ACHAT
 				if (read(service, &buf, BUFSIZE) == BUFSIZE) {
-					printf("Reçu : %d.\n", buf);
+					// vérification de la validité
+					timestamp = (int) buf[0];
+					nbPlaces = (int) buf[1];
+					cat = (int) buf[2];
+					nbEtudiant = (int) buf[3];
 				} else {
 					perror("read");
 					exit(EXIT_FAILURE);
 				}
-
-				// connexion client
-				printf("Demande d'ACHAT reçue...\n");
 
 				// connexion à PLACES
 				printf("Connexion au serveur PLACES...\n");
@@ -150,14 +161,61 @@ int main(int argc, char * argv[]) {
 				// connexion OK
 				printf("Connexion acceptée.\n");
 
-				// TODO: envoi de la commande
+				// envoi de la commande à PLACES
+				ssize_t wr;
+				if ((wr = write(places_sock, &buf, BUFSIZE)) == -1) {
+					perror("write");
+					exit(EXIT_FAILURE);
+				}
+
+				// réception de la réponse de PLACES
+				ssize_t rd;
+				if ((rd = read(places_sock, &buf, BUFSIZE)) == -1) {
+					perror("read");
+					exit(EXIT_FAILURE);
+				}
+
+				// TODO: traitement de la réponse de PLACES
+				if (buf[1] == -nbPlaces) {
+					// toutes les places sont disponibles
+					// ...
+				} else if (buf[1] < 0) {
+					// quelques places disponibles
+					// ...
+				} else if (buf[1] == 0) {
+					// aucune place disponible
+					// ...
+				} else {
+					// toute autre valeur est une erreur
+					perror("PLACES");
+					exit(EXIT_FAILURE);
+				}
+
+				// TODO: retransmission à ACHAT
+				// ...
+
+				// attente confirmation d'ACHAT
+				if ((rd = read(service, &buf, BUFSIZE)) != BUFSIZE) {
+					perror("read");
+					exit(EXIT_FAILURE);
+				}
+
+				// TODO: traitement confirmation d'ACHAT
+				// si erreur, désistement... retour de places à PLACES
 				// ...
 
 				// fermeture connexion à PLACES
 				close(places_sock);
 
+				// fermeture connexion à ACHAT
+				close(service);
+
 				// fin de l'exécution
 				exit(EXIT_SUCCESS);
+			default:
+				// le socket de service appartient au fils
+				close(service);
+				break;
 		}
 	}
 

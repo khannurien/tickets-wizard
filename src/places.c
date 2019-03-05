@@ -34,7 +34,7 @@
 /**
  * Taille du buffer
  */
-#define BUFSIZE sizeof(int)
+#define BUFSIZE 4
 
 /**
  * Nombre de places
@@ -67,24 +67,9 @@ int firstAvailable(int cat) {
 }
 
 /**
- * Retourne le nombre de places disponibles dans PLACES[]
- */
-int nbAvailable() {
-	int i;
-	int nb = 0;
-	int nope = 0;
-
-	for (i = 0; i < MAXPLACES; i++) {
-		PLACES[i] == 0 ? nope++ : nb++;
-	}
-
-	return nb;
-}
-
-/**
  * Retourne le nombre de places d'une catégorie donnée disponibles dans PLACES[]
  */
-int nbAvailableInCat(int cat) {
+int nbAvailable(int cat) {
 	int i;
 	int nb = 0;
 	int nope = 0;
@@ -133,7 +118,7 @@ int main(int argc, char * argv[]) {
 	for (i = 0; i < MAXCAT3; i++) PLACES[MAXCAT1 + MAXCAT2 + i] = 3;
 
 	// buffer
-	int buf;
+	char buf[BUFSIZE];
 
 	// port
 	unsigned short port;
@@ -173,10 +158,7 @@ int main(int argc, char * argv[]) {
 
 	// boucle d'attente de connexion
 	while(1) {
-		int nbPlaces = nbAvailable();
-
 		printf("PLACES\n");
-		printf("Disponibles : %d\n", nbPlaces);
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -196,48 +178,59 @@ int main(int argc, char * argv[]) {
 
 		// réception demande client
 		ssize_t rd;
-		if ((rd = read(service, &buf, BUFSIZE)) == BUFSIZE) {
-			printf("Reçu : %d.\n", buf);
-		} else {
+		if ((rd = read(service, &buf, BUFSIZE)) != BUFSIZE) {
 			perror("read");
 			return EXIT_FAILURE;
 		}
 
 		// traitement requête
-		ssize_t wr;
-		if (buf < 0) {
+		int timestamp = (int) buf[0];
+		int valeur = (int) buf[1];
+		int cat = (int) buf[2];
+		int nbEtudiant = (int) buf[3];
+
+		// nb places disponibles
+		int nbPlaces = nbAvailable(cat);
+
+		// code retour pour CONCERT
+		int result;
+
+		if (valeur < 0) {
 			// commande
 			if (nbPlaces == 0) {
 				// pas de dispo
 				// retourne 0
-				buf = 0;
+				result = 0;
 				printf("Pas de place disponible.\n");
-			} else if (nbPlaces <= buf) {
+			} else if (nbPlaces <= valeur) {
 				// pas assez de dispo
 				// retourne -NBPLACES
-				buf = -nbPlaces;
+				result = -nbPlaces;
 				printf("Pas assez de places disponibles.\n");
 			} else {
 				// commande OK
-				// retourne buf
-				printf("Commande OK.\n");
+				// retourne le contraire de la valeur demandée
+				result = -valeur;
+				printf("Commande de %d places OK.\n", valeur);
 			}
-		} else if (buf > 0) {
+		} else if (valeur > 0) {
 			// désistement
-			// retourne buf
-			// TODO: buf ne contient pas d'info sur la catégorie de la place...
+			// retourne la valeur demandée
+			result = valeur;
 			int i;
-			for (i = 0; i < buf; i++) placeAdd(1);
-			printf("Retour de %d places dans le tiroir !\n", buf);
+			for (i = 0; i < valeur; i++) placeAdd(cat);
+			printf("Retour de %d places dans le tiroir !\n", valeur);
 		}
 
+		// écriture code retour
+		buf[1] = result;
+
 		// réponse au client
+		ssize_t wr;
 		if ((wr = write(service, &buf, BUFSIZE)) == -1) {
 			perror("write");
 			return EXIT_FAILURE;
 		}
-
-		printf("Envoyé : %d.\n", buf);
 
 		// fermeture connexion client
 		close(service);
