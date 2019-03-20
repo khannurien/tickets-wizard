@@ -105,26 +105,48 @@ int main(int argc, char * argv[]) {
 
 		// envoi de la commande
 		ssize_t wr;
-		if ((wr = write(sock, &buf, BUFSIZE)) == -1) {
+		if ((wr = write(sock, buf, BUFSIZE)) == -1) {
 			perror("write");
 			exit(EXIT_FAILURE);
 		}
 
 		// réception de la réponse de CONCERT
 		ssize_t rd;
-		if ((rd = read(sock, &buf, BUFSIZE)) != BUFSIZE) {
+		if ((rd = read(sock, buf, BUFSIZE)) != BUFSIZE) {
 			perror("read");
 			exit(EXIT_FAILURE);
 		}
 
 		// TODO: traitement réponse
-		// ...
+		char confirmation;
+		if (buf[1] < nbPlaces) {
+			// seule une partie des places est disponible
+			while (confirmation != 'o' || confirmation != 'n') {
+				printf("Il ne reste que %d places. Voulez-vous les acheter ? [o/n]\n", buf[1]);
+				scanf("%c\n", &confirmation);
+			}
+		} else if (buf[1] == 0) {
+			// aucune place disponible, fin d'exécution
+			printf("Il ne reste aucune place.\n");
+			close(sock);
+			exit(EXIT_SUCCESS);
+		} else if (buf[1] > nbPlaces) {
+			// c'est une erreur, fin d'exécution
+			perror("ACHAT");
+			close(sock);
+			exit(EXIT_FAILURE);
+		}
 
-		// TODO: demande numéro CB
-		// ...
+		if (confirmation == 'o') {
+			// TODO: demande numéro CB
+			// ...
 
-		// TODO: réponse validation paiement
-		// ...
+			// TODO: réponse validation paiement
+			// ...
+		} else if (confirmation == 'n') {
+			// TODO: refus commande
+			// ...
+		}
 
 		// fermeture connexion à CONCERT
 		close(sock);

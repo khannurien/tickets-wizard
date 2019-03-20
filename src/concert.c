@@ -28,6 +28,42 @@
  */
 #define BUFSIZE 4
 
+int howMuch(int nbPlaces, int cat, int nbEtudiant) {
+	int result = 0;
+	int prixPlace;
+
+	switch (cat) {
+		case 1:
+			prixPlace = 50;
+			break;
+		case 2:
+			prixPlace = 30;
+			break;
+		case 3:
+			prixPlace = 20;
+			break;
+		default:
+			perror("howMuch");
+			exit(EXIT_FAILURE);
+	}
+
+	if (nbEtudiant > 0) {
+		int i;
+		for (i = 0; i < nbPlaces; i++) {
+			if (nbEtudiant > 0) {
+				result += prixPlace * 0.8;
+				nbEtudiant--;
+			} else {
+				result += prixPlace;
+			}
+		}
+	} else {
+		result = nbPlaces * prixPlace;
+	}
+
+	return result;
+}
+
 int main(int argc, char * argv[]) {
 	if (argc != 4) {
 		printf("Usage: %s <port> <PLACES hostname> <PLACES port>\n", argv[0]);
@@ -60,7 +96,7 @@ int main(int argc, char * argv[]) {
 	srv_addr_lg = sizeof(srv_addr);
 
 	// attachement socket RDV
-	if (bind(sock, (struct sockaddr *) & srv_addr, srv_addr_lg) == -1) {
+	if (bind(sock, (struct sockaddr *) &srv_addr, srv_addr_lg) == -1) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
@@ -112,7 +148,7 @@ int main(int argc, char * argv[]) {
 				close(sock);
 
 				// lecture de la demande d'ACHAT
-				if (read(service, &buf, BUFSIZE) == BUFSIZE) {
+				if (read(service, buf, BUFSIZE) == BUFSIZE) {
 					// vérification de la validité
 					timestamp = (int) buf[0];
 					nbPlaces = (int) buf[1];
@@ -163,39 +199,57 @@ int main(int argc, char * argv[]) {
 
 				// envoi de la commande à PLACES
 				ssize_t wr;
-				if ((wr = write(places_sock, &buf, BUFSIZE)) == -1) {
+				if ((wr = write(places_sock, buf, BUFSIZE)) == -1) {
 					perror("write");
 					exit(EXIT_FAILURE);
 				}
 
 				// réception de la réponse de PLACES
 				ssize_t rd;
-				if ((rd = read(places_sock, &buf, BUFSIZE)) == -1) {
+				if ((rd = read(places_sock, buf, BUFSIZE)) == -1) {
 					perror("read");
 					exit(EXIT_FAILURE);
 				}
 
 				// TODO: traitement de la réponse de PLACES
+				int prixFinal = -1;
+
 				if (buf[1] == -nbPlaces) {
 					// toutes les places sont disponibles
-					// ...
+					buf[1] = nbPlaces;
+					// on calcule le prix final et on prépare l'envoi à ACHAT
+					prixFinal = howMuch(nbPlaces, cat, nbEtudiant);
 				} else if (buf[1] < 0) {
 					// quelques places disponibles
-					// ...
+					buf[1] *= -1;
+					// on calcule le prix final et on prépare la proposition à ACHAT
+					prixFinal = howMuch(buf[1], cat, nbEtudiant);
 				} else if (buf[1] == 0) {
 					// aucune place disponible
-					// ...
+					// on annule la demande d'ACHAT en restituant les places à PLACES
+					buf[1] = nbPlaces;
+					if ((wr = write(places_sock, buf, BUFSIZE)) == -1) {
+						perror("write");
+						exit(EXIT_FAILURE);
+					}
+					// on répond à ACHAT
+					buf[1] = 0;
 				} else {
 					// toute autre valeur est une erreur
-					perror("PLACES");
+					perror("CONCERT");
 					exit(EXIT_FAILURE);
 				}
 
 				// TODO: retransmission à ACHAT
+				// placer le prix final dans le buffer
 				// ...
+				if ((wr = write(service, buf, BUFSIZE)) != BUFSIZE) {
+					perror("write");
+					exit(EXIT_FAILURE);
+				}
 
 				// attente confirmation d'ACHAT
-				if ((rd = read(service, &buf, BUFSIZE)) != BUFSIZE) {
+				if ((rd = read(service, buf, BUFSIZE)) != BUFSIZE) {
 					perror("read");
 					exit(EXIT_FAILURE);
 				}

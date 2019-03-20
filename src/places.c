@@ -178,7 +178,7 @@ int main(int argc, char * argv[]) {
 
 		// réception demande client
 		ssize_t rd;
-		if ((rd = read(service, &buf, BUFSIZE)) != BUFSIZE) {
+		if ((rd = read(service, buf, BUFSIZE)) != BUFSIZE) {
 			perror("read");
 			return EXIT_FAILURE;
 		}
@@ -187,7 +187,6 @@ int main(int argc, char * argv[]) {
 		int timestamp = (int) buf[0];
 		int valeur = (int) buf[1];
 		int cat = (int) buf[2];
-		int nbEtudiant = (int) buf[3];
 
 		// nb places disponibles
 		int nbPlaces = nbAvailable(cat);
@@ -206,11 +205,14 @@ int main(int argc, char * argv[]) {
 				// pas assez de dispo
 				// retourne -NBPLACES
 				result = -nbPlaces;
-				printf("Pas assez de places disponibles.\n");
+				// for (i = 0; i < nbPlaces; i++) placeRemove(cat);
+				printf("Seulement %d / %d places disponibles.\n", nbPlaces, valeur);
 			} else {
 				// commande OK
 				// retourne le contraire de la valeur demandée
 				result = -valeur;
+				int i;
+				for (i = 0; i < valeur; i++) placeRemove(cat);
 				printf("Commande de %d places OK.\n", valeur);
 			}
 		} else if (valeur > 0) {
@@ -220,6 +222,11 @@ int main(int argc, char * argv[]) {
 			int i;
 			for (i = 0; i < valeur; i++) placeAdd(cat);
 			printf("Retour de %d places dans le tiroir !\n", valeur);
+
+			// fermeture connexion client
+			close(service);
+			// on sort de la boucle pour attendre une nouvelle demande de CONCERT
+			break;
 		}
 
 		// écriture code retour
@@ -227,7 +234,7 @@ int main(int argc, char * argv[]) {
 
 		// réponse au client
 		ssize_t wr;
-		if ((wr = write(service, &buf, BUFSIZE)) == -1) {
+		if ((wr = write(service, buf, BUFSIZE)) == -1) {
 			perror("write");
 			return EXIT_FAILURE;
 		}
