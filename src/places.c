@@ -171,7 +171,6 @@ int main(int argc, char * argv[]) {
 	// boucle d'attente de connexion
 	while(1) {
 		printf("PLACES\n");
-		dumpPlaces();
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -197,13 +196,13 @@ int main(int argc, char * argv[]) {
 		}
 
 		// traitement requête
-		int timestamp = (int) buf[0];
-		int valeur = (int) buf[1];
-		int cat = (int) buf[2];
+		int timestamp = buf[0];
+		int valeur = buf[1];
+		int cat = buf[2];
 
 		// nb places disponibles
 		int nbPlaces = nbAvailable(cat);
-		printf("%d / %d\n", nbPlaces, valeur);
+		printf("%d / %d\n", nbPlaces, -valeur);
 
 		// code retour pour CONCERT
 		int result;
@@ -217,26 +216,26 @@ int main(int argc, char * argv[]) {
 				printf("Pas de place disponible.\n");
 			} else if (nbPlaces <= -valeur) {
 				// pas assez de dispo
-				// retourne -NBPLACES
+				// retourne le nombre de places disponibles en négatif
 				result = -nbPlaces;
 				for (i = 0; i < nbPlaces; i++) placeRemove(cat);
-				printf("Seulement %d / %d places disponibles.\n", nbPlaces, valeur);
+				printf("Seulement %d / %d places disponibles.\n", nbPlaces, -valeur);
 			} else {
 				// commande OK
-				// retourne le contraire de la valeur demandée
-				result = valeur;
+				// retourne la valeur demandée en positif
+				result = -valeur;
 				int i;
 				for (i = 0; i < -valeur; i++) placeRemove(cat);
-				printf("Commande de %d places OK.\n", valeur);
+				printf("Commande de %d places OK.\n", -valeur);
 			}
 		} else if (valeur > 0) {
-			// désistement
-			// retourne la valeur demandée
-			result = valeur;
-			int i;
-			for (i = 0; i < valeur; i++) placeAdd(cat);
-			printf("Retour de %d places dans le tiroir !\n", valeur);
+			// erreur
+			perror("PLACES");
+			exit(EXIT_FAILURE);
 		}
+
+		// affichage des places
+		dumpPlaces();
 
 		// écriture code retour
 		buf[1] = result;
@@ -247,6 +246,23 @@ int main(int argc, char * argv[]) {
 			perror("write");
 			return EXIT_FAILURE;
 		}
+
+		// lecture réponse finale
+		if ((rd = read(service, buf, BUFSIZE)) != BUFSIZE) {
+			dumpBuffer(buf);
+			perror("read");
+			return EXIT_FAILURE;
+		}
+
+		if (buf[1] < 0) {
+			// désistement
+			// retourne la valeur demandée
+			int i;
+			for (i = 0; i < -buf[1]; i++) placeAdd(cat);
+			printf("Retour de %d places dans le tiroir !\n", -buf[1]);
+		}
+
+		printf("Fin de la transaction.\n");
 
 		// fermeture connexion client
 		close(service);

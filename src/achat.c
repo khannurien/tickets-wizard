@@ -137,6 +137,8 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
+		// TODO: affichage du prix !!!
+
 		// traitement réponse
 		char confirmation = 'z';
 		if (buf[1] == nbPlaces) {
@@ -146,18 +148,14 @@ int main(int argc, char * argv[]) {
 		} else if ((buf[1] < nbPlaces) && (buf[1] > 0)) {
 			// seule une partie des places est disponible
 			while ((confirmation != 'o') && (confirmation != 'n')) {
-				printf("Il ne reste que %d places. Voulez-vous les acheter ? [o/n]\n", buf[1]);
+				printf("Il ne reste que %d places. Voulez-vous les acheter ? [o/n] ", buf[1]);
 				if (fgets(input, sizeof(input), stdin) == NULL) continue;
 				confirmation = input[0];
 			}
-		} else if (buf[1] == -1) {
-			// désistement
-			// ...
 		} else if (buf[1] == 0) {
 			// aucune place disponible, fin d'exécution
+			confirmation = 'n';
 			printf("Il ne reste aucune place.\n");
-			close(sock);
-			exit(EXIT_SUCCESS);
 		} else if (buf[1] > nbPlaces) {
 			// c'est une erreur, fin d'exécution
 			perror("ACHAT");
@@ -166,14 +164,28 @@ int main(int argc, char * argv[]) {
 		}
 
 		if (confirmation == 'o') {
-			// TODO: demande numéro CB
-			// write unsigned int
+			// demande numéro CB
+			printf("Entrez votre numéro de CB : ");
+			int numCB;
+			while (fgets(input, sizeof(input), stdin)) {
+				numCB = strtol(input, &p, 10);
 
-			// TODO: réponse validation paiement
-			// ...
+				if (p == input || * p != '\n') {
+					printf("Veuillez entrer un numéro de CB valide : ");
+				} else break;
+			}
+			buf[3] = numCB;
 		} else if (confirmation == 'n') {
-			// TODO: refus commande
-			// write -1
+			// refus commande
+			// buf[1] contient le nombre de places à restituer
+			// on le renvoie en négatif
+			buf[1] *= -1;
+		}
+
+		// envoi dernière réponse à CONCERT
+		if ((wr = write(sock, buf, BUFSIZE)) == -1) {
+			perror("write");
+			exit(EXIT_FAILURE);
 		}
 
 		// fermeture connexion à CONCERT

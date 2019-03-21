@@ -107,11 +107,15 @@ int main(int argc, char * argv[]) {
 				// on quitte le socket de RDV
 				close(sock);
 
+				// TODO: traitement de la déconnexion d'ACHAT
+				// test rd == 0 sur tous les read()
+				ssize_t rd;
+
 				// lecture de la demande d'ACHAT
 				if (read(service, buf, BUFSIZE) == BUFSIZE) {
 					// vérification de la validité
 					timestamp = buf[0];
-					nbPlaces = -buf[1]; // valeur négative pour une commande
+					nbPlaces = buf[1];
 					cat = buf[2];
 					nbEtudiant = buf[3];
 				} else {
@@ -158,7 +162,7 @@ int main(int argc, char * argv[]) {
 				printf("Connexion acceptée.\n");
 
 				// envoi de la commande à PLACES
-				buf[1] = nbPlaces;
+				buf[1] *= -1;
 				ssize_t wr;
 				if ((wr = write(places_sock, buf, BUFSIZE)) == -1) {
 					perror("write");
@@ -166,7 +170,6 @@ int main(int argc, char * argv[]) {
 				}
 
 				// réception de la réponse de PLACES
-				ssize_t rd;
 				if ((rd = read(places_sock, buf, BUFSIZE)) == -1) {
 					perror("read");
 					exit(EXIT_FAILURE);
@@ -174,32 +177,24 @@ int main(int argc, char * argv[]) {
 
 				// traitement de la réponse de PLACES
 				int prixFinal = -1;
+				int placesEffectives;
 
-				if (buf[1] == -nbPlaces) {
+				if (buf[1] == nbPlaces) {
 					// toutes les places sont disponibles
-					buf[1] = nbPlaces;
 					// on calcule le prix final et on prépare l'envoi à ACHAT
 					prixFinal = howMuch(nbPlaces, cat, nbEtudiant);
 					buf[3] = prixFinal;
 				} else if (buf[1] < 0) {
 					// quelques places disponibles
-					buf[1] *= -1;
+					placesEffectives = buf[1];
 					// on calcule le prix final et on prépare la proposition à ACHAT
 					prixFinal = howMuch(buf[1], cat, nbEtudiant);
+					buf[1] *= -1;
 					buf[3] = prixFinal;
 				} else if (buf[1] == 0) {
 					// aucune place disponible
-					// on annule la demande d'ACHAT en restituant les places à PLACES
-					buf[1] = nbPlaces;
-					if ((wr = write(places_sock, buf, BUFSIZE)) == -1) {
-						perror("write");
-						exit(EXIT_FAILURE);
-					}
 					// on répond à ACHAT
 					buf[1] = 0;
-				} else if (buf[1] == nbPlaces) {
-					// désistement OK : on informe ACHAT
-					buf[1] = -1;
 				} else {
 					// toute autre valeur est une erreur
 					perror("CONCERT");
@@ -220,7 +215,16 @@ int main(int argc, char * argv[]) {
 
 				// TODO: traitement confirmation d'ACHAT
 				// si erreur, désistement... retour de places à PLACES
-				// ...
+				if (buf[1] == -1) {
+					// refus commande
+					buf[1] = -placesEffectives;
+				}
+
+				// envoi de la confirmation à PLACES
+				if ((wr = write(places_sock, buf, BUFSIZE)) != BUFSIZE) {
+					perror("write");
+					exit(EXIT_FAILURE);
+				}
 
 				// fermeture connexion à PLACES
 				close(places_sock);
