@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "common.h"
 
 /**
  * Tickets Wizard
@@ -34,8 +35,6 @@
  * 
  */
 
-#define BUFSIZE 4
-
 int main(int argc, char * argv[]) {
 	if (argc != 3) {
 		printf("Usage: %s <CONCERT hostname> <CONCERT port>\n", argv[0]);
@@ -51,14 +50,35 @@ int main(int argc, char * argv[]) {
 		int cat;
 		int nbEtudiant;
 
-		// invite
-		// TODO: tester les valeurs entrées...
+		// vérification de l'entrée utilisateur
+		char * p, input[256];
+		
 		printf("Nouvelle commande. Combien de places ?\n");
-		scanf("%d", &nbPlaces);
+		while (fgets(input, sizeof(input), stdin)) {
+			nbPlaces = strtol(input, &p, 10);
+
+			if (p == input || * p != '\n') {
+				printf("Veuillez entrer une valeur entière : ");
+			} else break;
+		}
+
 		printf("Quelle catégorie ?\n");
-		scanf("%d", &cat);
+		while (fgets(input, sizeof(input), stdin)) {
+			cat = strtol(input, &p, 10);
+
+			if (p == input || * p != '\n') {
+				printf("Veuillez entrer une valeur entière : ");
+			} else break;
+		}
+
 		printf("Combien de places en tarif étudiant ?\n");
-		scanf("%d", &nbEtudiant);
+		while (fgets(input, sizeof(input), stdin)) {
+			nbEtudiant = strtol(input, &p, 10);
+
+			if (p == input || * p != '\n') {
+				printf("Veuillez entrer une valeur entière : ");
+			} else break;
+		}
 
 		// connexion à CONCERT
 		printf("Connexion au serveur CONCERT...\n");
@@ -70,7 +90,7 @@ int main(int argc, char * argv[]) {
 		struct hostent * host;
 
 		// buffer
-		char buf[BUFSIZE];
+		int buf[BUFELEM];
 		buf[0] = timestamp;
 		buf[1] = nbPlaces;
 		buf[2] = cat;
@@ -117,14 +137,22 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
-		// TODO: traitement réponse
-		char confirmation;
-		if (buf[1] < nbPlaces) {
+		// traitement réponse
+		char confirmation = 'z';
+		if (buf[1] == nbPlaces) {
+			// commande OK, toutes les places demandées sont réservées
+			confirmation = 'o';
+			printf("Toutes les places sont disponibles.\n");
+		} else if ((buf[1] < nbPlaces) && (buf[1] > 0)) {
 			// seule une partie des places est disponible
-			while (confirmation != 'o' || confirmation != 'n') {
+			while ((confirmation != 'o') && (confirmation != 'n')) {
 				printf("Il ne reste que %d places. Voulez-vous les acheter ? [o/n]\n", buf[1]);
-				scanf("%c\n", &confirmation);
+				if (fgets(input, sizeof(input), stdin) == NULL) continue;
+				confirmation = input[0];
 			}
+		} else if (buf[1] == -1) {
+			// désistement
+			// ...
 		} else if (buf[1] == 0) {
 			// aucune place disponible, fin d'exécution
 			printf("Il ne reste aucune place.\n");
@@ -139,13 +167,13 @@ int main(int argc, char * argv[]) {
 
 		if (confirmation == 'o') {
 			// TODO: demande numéro CB
-			// ...
+			// write unsigned int
 
 			// TODO: réponse validation paiement
 			// ...
 		} else if (confirmation == 'n') {
 			// TODO: refus commande
-			// ...
+			// write -1
 		}
 
 		// fermeture connexion à CONCERT

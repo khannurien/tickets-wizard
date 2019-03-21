@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "common.h"
 
 /**
  * Tickets Wizard
@@ -22,47 +23,6 @@
  * Calcule le prix d'achat et valide les paiements.
  * 
  */
-
-/**
- * Taille du buffer
- */
-#define BUFSIZE 4
-
-int howMuch(int nbPlaces, int cat, int nbEtudiant) {
-	int result = 0;
-	int prixPlace;
-
-	switch (cat) {
-		case 1:
-			prixPlace = 50;
-			break;
-		case 2:
-			prixPlace = 30;
-			break;
-		case 3:
-			prixPlace = 20;
-			break;
-		default:
-			perror("howMuch");
-			exit(EXIT_FAILURE);
-	}
-
-	if (nbEtudiant > 0) {
-		int i;
-		for (i = 0; i < nbPlaces; i++) {
-			if (nbEtudiant > 0) {
-				result += prixPlace * 0.8;
-				nbEtudiant--;
-			} else {
-				result += prixPlace;
-			}
-		}
-	} else {
-		result = nbPlaces * prixPlace;
-	}
-
-	return result;
-}
 
 int main(int argc, char * argv[]) {
 	if (argc != 4) {
@@ -136,7 +96,7 @@ int main(int argc, char * argv[]) {
 		}
 
 		// un buffer par processus
-		char buf[BUFSIZE];
+		int buf[BUFELEM];
 
 		// valeurs attendues dans le buffer
 		int timestamp, nbPlaces, cat, nbEtudiant;
@@ -150,10 +110,10 @@ int main(int argc, char * argv[]) {
 				// lecture de la demande d'ACHAT
 				if (read(service, buf, BUFSIZE) == BUFSIZE) {
 					// vérification de la validité
-					timestamp = (int) buf[0];
-					nbPlaces = (int) buf[1];
-					cat = (int) buf[2];
-					nbEtudiant = (int) buf[3];
+					timestamp = buf[0];
+					nbPlaces = -buf[1]; // valeur négative pour une commande
+					cat = buf[2];
+					nbEtudiant = buf[3];
 				} else {
 					perror("read");
 					exit(EXIT_FAILURE);
@@ -198,6 +158,7 @@ int main(int argc, char * argv[]) {
 				printf("Connexion acceptée.\n");
 
 				// envoi de la commande à PLACES
+				buf[1] = nbPlaces;
 				ssize_t wr;
 				if ((wr = write(places_sock, buf, BUFSIZE)) == -1) {
 					perror("write");
@@ -211,7 +172,7 @@ int main(int argc, char * argv[]) {
 					exit(EXIT_FAILURE);
 				}
 
-				// TODO: traitement de la réponse de PLACES
+				// traitement de la réponse de PLACES
 				int prixFinal = -1;
 
 				if (buf[1] == -nbPlaces) {
@@ -219,11 +180,13 @@ int main(int argc, char * argv[]) {
 					buf[1] = nbPlaces;
 					// on calcule le prix final et on prépare l'envoi à ACHAT
 					prixFinal = howMuch(nbPlaces, cat, nbEtudiant);
+					buf[3] = prixFinal;
 				} else if (buf[1] < 0) {
 					// quelques places disponibles
 					buf[1] *= -1;
 					// on calcule le prix final et on prépare la proposition à ACHAT
 					prixFinal = howMuch(buf[1], cat, nbEtudiant);
+					buf[3] = prixFinal;
 				} else if (buf[1] == 0) {
 					// aucune place disponible
 					// on annule la demande d'ACHAT en restituant les places à PLACES
@@ -234,15 +197,16 @@ int main(int argc, char * argv[]) {
 					}
 					// on répond à ACHAT
 					buf[1] = 0;
+				} else if (buf[1] == nbPlaces) {
+					// désistement OK : on informe ACHAT
+					buf[1] = -1;
 				} else {
 					// toute autre valeur est une erreur
 					perror("CONCERT");
 					exit(EXIT_FAILURE);
 				}
 
-				// TODO: retransmission à ACHAT
-				// placer le prix final dans le buffer
-				// ...
+				// retransmission à ACHAT
 				if ((wr = write(service, buf, BUFSIZE)) != BUFSIZE) {
 					perror("write");
 					exit(EXIT_FAILURE);

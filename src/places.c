@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "common.h"
+
 /**
  * Tickets Wizard
  * Vincent Lannurien
@@ -32,11 +34,6 @@
  */
 
 /**
- * Taille du buffer
- */
-#define BUFSIZE 4
-
-/**
  * Nombre de places
  */
 const int MAXPLACES = 300;
@@ -54,6 +51,21 @@ const int MAXCAT3 = 100;
  * Les étudiants ont droit à 20% de réduction.
  */
 int PLACES[MAXPLACES];
+
+/**
+ * Affichage du tableau PLACES[]
+ */
+void dumpPlaces() {
+	int i;
+
+	for (i = 0; i < MAXPLACES; i++) {
+		if (PLACES[i] == 0) {
+			printf("Emplacement %d | Place réservée.\n", i);
+		} else {
+			//printf("Emplacement %d | Catégorie %d\n", i, (PLACES[i]));
+		}
+	}
+}
 
 /**
  * Retourne l'index dans PLACES[] de la première place disponible dans une catégorie donnée
@@ -118,7 +130,7 @@ int main(int argc, char * argv[]) {
 	for (i = 0; i < MAXCAT3; i++) PLACES[MAXCAT1 + MAXCAT2 + i] = 3;
 
 	// buffer
-	char buf[BUFSIZE];
+	int buf[BUFELEM];
 
 	// port
 	unsigned short port;
@@ -159,6 +171,7 @@ int main(int argc, char * argv[]) {
 	// boucle d'attente de connexion
 	while(1) {
 		printf("PLACES\n");
+		dumpPlaces();
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -190,6 +203,7 @@ int main(int argc, char * argv[]) {
 
 		// nb places disponibles
 		int nbPlaces = nbAvailable(cat);
+		printf("%d / %d\n", nbPlaces, valeur);
 
 		// code retour pour CONCERT
 		int result;
@@ -201,18 +215,18 @@ int main(int argc, char * argv[]) {
 				// retourne 0
 				result = 0;
 				printf("Pas de place disponible.\n");
-			} else if (nbPlaces <= valeur) {
+			} else if (nbPlaces <= -valeur) {
 				// pas assez de dispo
 				// retourne -NBPLACES
 				result = -nbPlaces;
-				// for (i = 0; i < nbPlaces; i++) placeRemove(cat);
+				for (i = 0; i < nbPlaces; i++) placeRemove(cat);
 				printf("Seulement %d / %d places disponibles.\n", nbPlaces, valeur);
 			} else {
 				// commande OK
 				// retourne le contraire de la valeur demandée
-				result = -valeur;
+				result = valeur;
 				int i;
-				for (i = 0; i < valeur; i++) placeRemove(cat);
+				for (i = 0; i < -valeur; i++) placeRemove(cat);
 				printf("Commande de %d places OK.\n", valeur);
 			}
 		} else if (valeur > 0) {
@@ -222,11 +236,6 @@ int main(int argc, char * argv[]) {
 			int i;
 			for (i = 0; i < valeur; i++) placeAdd(cat);
 			printf("Retour de %d places dans le tiroir !\n", valeur);
-
-			// fermeture connexion client
-			close(service);
-			// on sort de la boucle pour attendre une nouvelle demande de CONCERT
-			break;
 		}
 
 		// écriture code retour
