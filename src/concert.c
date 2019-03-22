@@ -18,7 +18,6 @@
  * GNU GPL v3
  * 
  * CONCERT
- * "Man in the middle"
  * Reçoit les demandes d'ACHAT et les confirme auprès de PLACES.
  * Calcule le prix d'achat et valide les paiements.
  * 
@@ -107,19 +106,19 @@ int main(int argc, char * argv[]) {
 				// on quitte le socket de RDV
 				close(sock);
 
-				// TODO: traitement de la déconnexion d'ACHAT
-				// test rd == 0 sur tous les read()
+				// traitement de la déconnexion d'ACHAT
 				ssize_t rd;
 
 				// lecture de la demande d'ACHAT
-				if (read(service, buf, BUFSIZE) == BUFSIZE) {
+				if ((rd = read(service, buf, BUFSIZE)) == BUFSIZE) {
 					// vérification de la validité
 					timestamp = buf[0];
 					nbPlaces = buf[1];
 					cat = buf[2];
 					nbEtudiant = buf[3];
-				} else {
-					perror("read");
+				} else if (rd == 0) {
+					// déconnexion ACHAT
+					printf("Client ACHAT déconnecté.\n");
 					exit(EXIT_FAILURE);
 				}
 
@@ -177,7 +176,7 @@ int main(int argc, char * argv[]) {
 
 				// traitement de la réponse de PLACES
 				int prixFinal = -1;
-				int placesEffectives;
+				int placesEffectives = -1;
 
 				if (buf[1] == nbPlaces) {
 					// toutes les places sont disponibles
@@ -209,13 +208,34 @@ int main(int argc, char * argv[]) {
 				}
 
 				// attente confirmation d'ACHAT
-				if ((rd = read(service, buf, BUFSIZE)) != BUFSIZE) {
-					perror("read");
+				if ((rd = read(service, buf, BUFSIZE)) == 0) {
+					// déconnexion ACHAT
+					printf("Client ACHAT déconnecté.\n");
+					printf("Restitution des places...\n");
+					// envoi désistement
+					if (placesEffectives != -1) {
+						buf[1] = -placesEffectives;
+					} else {
+						buf[1] = -nbPlaces;
+					}
+
+					if ((wr = write(places_sock, buf, BUFSIZE)) != BUFSIZE) {
+						perror("write");
+						exit(EXIT_FAILURE);
+					}
+
+					// fermeture connexion à PLACES
+					close(places_sock);
+
+					// fermeture connexion à ACHAT
+					close(service);
+
+					// fin de l'exécution
 					exit(EXIT_FAILURE);
 				}
 
-				// TODO: traitement confirmation d'ACHAT
-				// si erreur, désistement... retour de places à PLACES
+				// traitement confirmation d'ACHAT
+				// si refus, retour de places à PLACES
 				if (buf[1] == -1) {
 					// refus commande
 					buf[1] = -placesEffectives;

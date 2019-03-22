@@ -30,8 +30,8 @@
  *  - s'il reste suffisamment de places, demande à l'utilisateur un numéro de CB :
  *    - transmet le numéro à CONCERT ;
  *    - termine la transaction après validation du paiement.
- *  - s'il ne reste plus de place disponible, informe l'acheteur et termine la transation ;
- *  - s'il reste des places en nombre insuffisant, propose de reformuler une demande.
+ *  - s'il reste des places en nombre insuffisant, propose à l'acheteur de prendre les places restantes ;
+ *  - s'il ne reste plus de place disponible, informe l'acheteur et termine la transation.
  * 
  */
 
@@ -189,7 +189,7 @@ int main(int argc, char * argv[]) {
 			// refus commande
 			// buf[1] contient le nombre de places à restituer
 			// on le renvoie en négatif
-			buf[1] *= -1;
+			buf[1] = -1;
 		}
 
 		// envoi dernière réponse à CONCERT
