@@ -171,6 +171,11 @@ int main(int argc, char * argv[]) {
 	// boucle d'attente de connexion
 	while(1) {
 		printf("PLACES\n");
+		// affichage stock
+		printf("%d places réservées\n", nbAvailable(0));
+		for (i = 1; i < 4; i++) {
+			printf("%d places disponibles en catégorie %d\n", nbAvailable(i), i);
+		}
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
@@ -202,7 +207,6 @@ int main(int argc, char * argv[]) {
 
 		// nb places disponibles
 		int nbPlaces = nbAvailable(cat);
-		printf("%d / %d\n", nbPlaces, -valeur);
 
 		// code retour pour CONCERT
 		int result;
@@ -219,7 +223,7 @@ int main(int argc, char * argv[]) {
 				// retourne le nombre de places disponibles en négatif
 				result = -nbPlaces;
 				for (i = 0; i < nbPlaces; i++) placeRemove(cat);
-				printf("Seulement %d / %d places disponibles.\n", nbPlaces, -valeur);
+				printf("Seulement %d places disponibles.\n", nbPlaces);
 			} else {
 				// commande OK
 				// retourne la valeur demandée en positif

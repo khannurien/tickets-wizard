@@ -186,9 +186,10 @@ int main(int argc, char * argv[]) {
 					buf[3] = prixFinal;
 				} else if (buf[1] < 0) {
 					// quelques places disponibles
-					placesEffectives = buf[1];
+					placesEffectives = -buf[1];
 					// on calcule le prix final et on prépare la proposition à ACHAT
-					prixFinal = howMuch(buf[1], cat, nbEtudiant);
+					if (nbEtudiant > placesEffectives) nbEtudiant = placesEffectives;
+					prixFinal = howMuch(placesEffectives, cat, nbEtudiant);
 					buf[1] *= -1;
 					buf[3] = prixFinal;
 				} else if (buf[1] == 0) {

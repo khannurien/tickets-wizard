@@ -59,6 +59,8 @@ int main(int argc, char * argv[]) {
 
 			if (p == input || * p != '\n') {
 				printf("Veuillez entrer une valeur entière : ");
+			} else if (nbPlaces <= 0) {
+				printf("Veuillez entrer une valeur supérieure à 0 : ");
 			} else break;
 		}
 
@@ -68,6 +70,8 @@ int main(int argc, char * argv[]) {
 
 			if (p == input || * p != '\n') {
 				printf("Veuillez entrer une valeur entière : ");
+			} else if ((cat != 1) && (cat != 2) && (cat != 3)) {
+				printf("Veuillez choisir une catégorie entre 1 et 3 : ");
 			} else break;
 		}
 
@@ -77,6 +81,8 @@ int main(int argc, char * argv[]) {
 
 			if (p == input || * p != '\n') {
 				printf("Veuillez entrer une valeur entière : ");
+			} else if ((nbEtudiant > nbPlaces) || (nbEtudiant < 0)) {
+				printf("Veuillez entrer une valeur entre 0 et le nombre de places commandées : ");
 			} else break;
 		}
 
@@ -137,18 +143,22 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
-		// TODO: affichage du prix !!!
-
 		// traitement réponse
 		char confirmation = 'z';
 		if (buf[1] == nbPlaces) {
 			// commande OK, toutes les places demandées sont réservées
 			confirmation = 'o';
 			printf("Toutes les places sont disponibles.\n");
+			// affichage prix
+			printf("Prix total : %d€\n", buf[3]);
 		} else if ((buf[1] < nbPlaces) && (buf[1] > 0)) {
 			// seule une partie des places est disponible
 			while ((confirmation != 'o') && (confirmation != 'n')) {
-				printf("Il ne reste que %d places. Voulez-vous les acheter ? [o/n] ", buf[1]);
+				// affichage prix
+				printf("Il ne reste que %d places.\n", buf[1]);
+				printf("Prix total : %d€\n", buf[3]);
+				printf("Voulez-vous les acheter ? [o/n] ");
+
 				if (fgets(input, sizeof(input), stdin) == NULL) continue;
 				confirmation = input[0];
 			}
