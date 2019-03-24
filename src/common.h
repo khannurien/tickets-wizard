@@ -5,6 +5,11 @@
 #define BUFSIZE (4 * sizeof(int))
 
 /**
+ * Prix des places par catégorie
+ */
+int prixPlaces[3];
+
+/**
  * Affichage des données du buffer
  */
 void dumpBuffer(int * buf);

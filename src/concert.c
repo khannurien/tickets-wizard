@@ -29,6 +29,11 @@ int main(int argc, char * argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	// initialisation des prix
+	prixPlaces[0] = 50;
+	prixPlaces[1] = 30;
+	prixPlaces[2] = 20;
+
 	// en tant que serveur CONCERT
 	// port serveur
 	int port;
@@ -66,9 +71,60 @@ int main(int argc, char * argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	// ensemble des descripteurs à surveiller
+	fd_set from_master, read_fds;
+	FD_ZERO(&from_master);
+	FD_ZERO(&read_fds);
+	FD_SET(0, &from_master); // stdin
+	FD_SET(sock, &from_master); // socket ACHAT
+
 	// boucle d'attente de connexion
 	while(1) {
-		printf("En attente de ACHAT...\n");
+		printf("En attente de demande d'ACHAT.\n\n");
+		printf("Vous pouvez modifier les prix des places pour les futures commandes en tapant Entrée.\n");
+		printf("Attention : pendant cette opération, les nouveaux clients seront mis en attente.\n\n");
+
+		// surveiller l'entrée standard en plus des connexions à ACHAT
+		read_fds = from_master;
+
+		int select_fds;
+		if ((select_fds = select(sock + 1, &read_fds, NULL, NULL, NULL)) == -1) {
+			perror("select");
+			exit(EXIT_FAILURE);
+		}
+
+		// activité sur stdin ?
+		if (FD_ISSET(0, &read_fds)) {
+			// on consomme le premier retour chariot
+			char c;
+			while ((c = getchar()) != '\n' && (c != EOF));
+
+			// vérification de l'entrée utilisateur
+			char * p, input[256];
+			int prixPlace;
+
+			int i;
+			for (i = 0; i < 3; i++) {
+				printf("Nouveau prix pour la catégorie %d : ", i + 1);
+				while (fgets(input, sizeof(input), stdin)) {
+					prixPlace = strtol(input, &p, 10);
+
+					if (p == input || * p != '\n') {
+						printf("Veuillez entrer une valeur entière : ");
+					} else if (prixPlace <= 0) {
+						printf("Veuillez entrer une valeur supérieure à 0 : ");
+					} else {
+						prixPlaces[i] = prixPlace;
+						break;
+					}
+				}
+			}
+
+			printf("Les prix ont bien été modifiés.\n\n");
+
+			// retour à l'exécution
+			continue;
+		}
 
 		// attente client
 		clt_addr_lg = sizeof(clt_addr);
