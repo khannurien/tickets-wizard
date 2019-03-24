@@ -27,19 +27,17 @@
  * 
  * Retourne à CONCERT :
  * 	- le nombre de places demandées effectivement réservées (entier négatif) ;
- * 	- une erreur :
- * 	  - plus de place disponible (zéro) ;
- * 	  - le nombre de places encore disponibles, mais pas réservées (entier négatif).
+ * 	- zéro s'il ne reste plus de places.
  * 
  */
 
 /**
  * Nombre de places
  */
-const int MAXPLACES = 300;
-const int MAXCAT1 = 50;
-const int MAXCAT2 = 150;
-const int MAXCAT3 = 100;
+#define MAXPLACES 300
+#define MAXCAT1 50
+#define MAXCAT2 150
+#define MAXCAT3 100
 
 /**
  * Tableau des places
@@ -60,7 +58,7 @@ void dumpPlaces() {
 
 	for (i = 0; i < MAXPLACES; i++) {
 		if (PLACES[i] == 0) {
-			printf("Emplacement %d | Place réservée.\n", i);
+			printf("Emplacement %d | Place réservée.\n", i);
 		} else {
 			//printf("Emplacement %d | Catégorie %d\n", i, (PLACES[i]));
 		}
