@@ -175,6 +175,11 @@ int main(int argc, char * argv[]) {
 				} else if (rd == 0) {
 					// déconnexion ACHAT
 					printf("Client ACHAT déconnecté.\n");
+
+					// fermeture connexion à ACHAT
+					close(service);
+
+					// fin de l'exécution
 					exit(EXIT_FAILURE);
 				}
 
