@@ -175,10 +175,11 @@ int main(int argc, char * argv[]) {
 				if (FD_ISSET(0, &read_fds_whileChatting)) {
 					// écriture message
 					printf("@%s: ", "dest");
-					fgets(msg_srv, 1024, stdin);
+					fgets(msg_clt, 1024, stdin);
+					printf("%s\n", msg_clt);
 
 					// quitter ?
-					if (strcmp(msg_srv, "/quit") == 0) break;
+					if (strncmp(msg_clt, "/quit", 4) == 0) break;
 
 					printf("\n");
 					// envoi du message
@@ -199,7 +200,7 @@ int main(int argc, char * argv[]) {
 						//return EXIT_FAILURE;
 					}
 
-					printf("%s: %s\n", "src", msg_clt);
+					printf("%s: %s\n", "src", msg_srv);
 
 					continue;
 				}
