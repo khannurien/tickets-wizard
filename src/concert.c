@@ -235,29 +235,26 @@ int main(int argc, char * argv[]) {
 				int placesEffectives = -1;
 
 				if (buf[1] < 0) {
-					// quelques places disponibles
-					placesEffectives = -buf[1];
 					// on calcule le prix final et on prépare la proposition à ACHAT
+					buf[1] *= -1;
+					placesEffectives = buf[1];
 					if (nbEtudiant > placesEffectives) nbEtudiant = placesEffectives;
 					prixFinal = howMuch(placesEffectives, cat, nbEtudiant);
-					buf[1] *= -1;
-				} else if (buf[1] == 0) {
-					// aucune place disponible
-					// on répond à ACHAT
-					buf[1] = 0;
-				} else {
+				} else if (buf[1] > 0) {
 					// toute autre valeur est une erreur
 					perror("CONCERT");
 					exit(EXIT_FAILURE);
 				}
 
 				// retransmission à ACHAT
+				// buf[1] == 0 si aucune place n'est disponible
 				if ((wr = write(service, buf, BUFSIZE)) != BUFSIZE) {
 					perror("write");
 					exit(EXIT_FAILURE);
 				}
 
 				// envoi du prix
+				// prixFinal == -1 si aucune place n'est disponible
 				if ((wr = write(service, &prixFinal, BUFSIZE)) != BUFSIZE) {
 					perror("write");
 					exit(EXIT_FAILURE);
@@ -290,6 +287,7 @@ int main(int argc, char * argv[]) {
 				// si refus, retour de places à PLACES
 				if (buf[1] == -1) {
 					// refus commande
+					printf("Restitution des places...\n");
 					buf[1] = -placesEffectives;
 				}
 
