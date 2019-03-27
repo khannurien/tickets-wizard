@@ -167,7 +167,7 @@ int main(int argc, char * argv[]) {
 	}
 
 	// boucle d'attente de connexion
-	while(1) {
+	while (1) {
 		printf("PLACES\n");
 		// affichage stock
 		printf("%d places réservées\n", nbAvailable(0));

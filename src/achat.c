@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 #include <strings.h>
 #include <time.h>
 #include <sys/types.h>
@@ -36,8 +37,8 @@
  */
 
 int main(int argc, char * argv[]) {
-	if (argc != 3) {
-		printf("Usage: %s <CONCERT hostname> <CONCERT port>\n", argv[0]);
+	if (argc != 4) {
+		printf("Usage: %s <CONCERT hostname> <CONCERT port> <CONCERT chat port>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -88,6 +89,7 @@ int main(int argc, char * argv[]) {
 
 		// vérification de l'entrée utilisateur
 		char * p, input[256];
+		int doWeChat = 0;
 		
 		printf("Nouvelle commande. Combien de places ?\n");
 		while (fgets(input, sizeof(input), stdin)) {
@@ -121,7 +123,94 @@ int main(int argc, char * argv[]) {
 				printf("Veuillez entrer une valeur entre 0 et le nombre de places commandées : ");
 			} else break;
 		}
+		
+		// test chat
+		doWeChat = 1;
 
+		if (doWeChat) {
+			// socket émetteur
+			int chat;
+			struct sockaddr_in adresseReceveur;
+			int lgadresseReceveur;
+			struct hostent * hote;
+
+			// création socket
+			if ((chat = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+				perror("socket");
+				exit(EXIT_FAILURE);
+			}
+
+			// recherche adresse IP distante
+			if ((hote = gethostbyname(argv[1])) == NULL) {
+				perror("gethostbyname");
+				exit(EXIT_FAILURE);
+			}
+
+			// préparation adresse distante
+			adresseReceveur.sin_family = AF_INET;
+			adresseReceveur.sin_port = htons(atoi(argv[3]));
+			bcopy(hote->h_addr, &adresseReceveur.sin_addr, hote->h_length);
+			lgadresseReceveur = sizeof(adresseReceveur);
+
+			// buffer
+			char msg_clt[1024];
+			char msg_srv[1024];
+
+			fd_set from_chat, read_fds_whileChatting;
+			FD_ZERO(&from_chat);
+			FD_ZERO(&read_fds_whileChatting);
+			FD_SET(0, &from_chat); // stdin
+			FD_SET(chat, &from_chat); // socket chat
+
+			// boucle de discussion
+			while (1) {
+				read_fds_whileChatting = from_chat;
+
+				int select_fds_chat;
+				if ((select_fds_chat = select(chat + 1, &read_fds_whileChatting, NULL, NULL, NULL)) == -1) {
+					perror("select");
+					exit(EXIT_FAILURE);
+				}
+
+				if (FD_ISSET(0, &read_fds_whileChatting)) {
+					// écriture message
+					printf("@%s: ", "dest");
+					fgets(msg_srv, 1024, stdin);
+
+					// quitter ?
+					if (strcmp(msg_srv, "/quit") == 0) break;
+
+					printf("\n");
+					// envoi du message
+					size_t sd;
+					if ((sd = sendto(chat, msg_clt, strlen(msg_clt) + 1, 0, (struct sockaddr *) &adresseReceveur, (socklen_t) lgadresseReceveur)) != strlen(msg_clt + 1)) {
+						perror("sendto");
+						//exit(EXIT_FAILURE);
+					}
+
+					continue;
+				}
+
+				if (FD_ISSET(chat, &read_fds_whileChatting)) {
+					// lecture message
+					size_t rv;
+					if ((rv = recvfrom(chat, msg_srv, sizeof(msg_srv), 0, (struct sockaddr *) &adresseReceveur, (socklen_t *) &lgadresseReceveur)) == -1) {
+						perror("recvfrom");
+						//return EXIT_FAILURE;
+					}
+
+					printf("%s: %s\n", "src", msg_clt);
+
+					continue;
+				}
+			}
+
+			// fermeture chat
+			close(chat);
+
+			// nouvelle commande
+			continue;
+		}
 
 		// buffer
 		int buf[BUFELEM];

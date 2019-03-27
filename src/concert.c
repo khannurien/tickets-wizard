@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 #include <strings.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -24,8 +25,8 @@
  */
 
 int main(int argc, char * argv[]) {
-	if (argc != 4) {
-		printf("Usage: %s <port> <PLACES hostname> <PLACES port>\n", argv[0]);
+	if (argc != 5) {
+		printf("Usage: %s <port> <PLACES hostname> <PLACES port> <chat port>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -79,7 +80,7 @@ int main(int argc, char * argv[]) {
 	FD_SET(sock, &from_master); // socket ACHAT
 
 	// boucle d'attente de connexion
-	while(1) {
+	while (1) {
 		printf("En attente de demande d'ACHAT.\n\n");
 		printf("Vous pouvez modifier les prix des places pour les futures commandes en tapant Entrée.\n");
 		printf("Attention : pendant cette opération, les nouveaux clients seront mis en attente.\n\n");
@@ -161,6 +162,105 @@ int main(int argc, char * argv[]) {
 			case 0:
 				// on quitte le socket de RDV
 				close(sock);
+
+				// socket UDP
+				int chat;
+				// adresse locale
+				char nomh[50];
+				struct sockaddr_in adresseLocale;
+				int lgadresseLocale;
+				// émetteur
+				struct sockaddr_in adresseEmetteur;
+				int lgadresseEmetteur;
+
+				// ouverture socket UDP
+				if ((chat = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+					perror("socket");
+					exit(EXIT_FAILURE);
+				}
+
+				// récupération du nom de la machine locale
+				if (gethostname(nomh, 50) == -1) {
+					perror("gethostname");
+					exit(EXIT_FAILURE);
+				}
+
+				// préparation adresse locale : port + toutes les IP
+				adresseLocale.sin_family = AF_INET;
+				adresseLocale.sin_port = htons(atoi(argv[4]));
+				adresseLocale.sin_addr.s_addr = htonl(INADDR_ANY);
+				lgadresseLocale = sizeof(adresseLocale);
+				lgadresseEmetteur = sizeof(adresseEmetteur);
+
+				// attachement de la socket à l'adresse locale
+				if ((bind(chat, (struct sockaddr *) &adresseLocale, lgadresseLocale)) == -1) {
+					perror("bind");
+					exit(EXIT_FAILURE);
+				}
+
+				// surveiller TCP et UDP
+				fd_set from_service, read_fds_chat;
+				FD_ZERO(&from_service);
+				FD_ZERO(&read_fds_chat);
+				FD_SET(service, &from_master); // socket service
+				FD_SET(chat, &from_master); // socket chat
+
+				int select_fds_chat;
+				if ((select_fds_chat = select(chat + 1, &read_fds_chat, NULL, NULL, NULL)) == -1) {
+					perror("select");
+					exit(EXIT_FAILURE);
+				}
+
+				// activité sur le chat ?
+				if (FD_ISSET(chat, &read_fds)) {
+					// boucle de discussion
+					char msg_srv[1024];
+					char msg_clt[1024];
+
+					fd_set from_chat, read_fds_whileChatting;
+					FD_ZERO(&from_chat);
+					FD_ZERO(&read_fds_whileChatting);
+					FD_SET(0, &from_master); // stdin
+					FD_SET(chat, &from_master); // socket chat
+
+					while (1) {
+						read_fds_whileChatting = from_chat;
+
+						int select_fds_chat;
+						if ((select_fds_chat = select(chat + 1, &read_fds_chat, NULL, NULL, NULL)) == -1) {
+							perror("select");
+							exit(EXIT_FAILURE);
+						}
+
+						if (FD_ISSET(0, &read_fds_whileChatting)) {
+							// écriture message
+							printf("@%s: ", "dest");
+							fgets(msg_srv, 1024, stdin);
+							printf("\n");
+							// envoi du message
+							size_t sd;
+							if ((sd = sendto(chat, msg_srv, strlen(msg_srv) + 1, 0, (struct sockaddr *) &adresseEmetteur, (socklen_t) lgadresseEmetteur)) != strlen(msg_srv + 1)) {
+								perror("sendto");
+								//exit(EXIT_FAILURE);
+							}
+
+							continue;
+						}
+
+						if (FD_ISSET(chat, &read_fds_whileChatting)) {
+							// lecture message
+							size_t rv;
+							if ((rv = recvfrom(chat, msg_clt, sizeof(msg_clt), 0, (struct sockaddr *) &adresseEmetteur, (socklen_t *) &lgadresseEmetteur)) == -1) {
+								perror("recvfrom");
+								//return EXIT_FAILURE;
+							}
+
+							printf("%s: %s\n", "src", msg_clt);
+
+							continue;
+						}
+					}
+				}
 
 				// traitement de la déconnexion d'ACHAT
 				ssize_t rd;
