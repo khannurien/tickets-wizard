@@ -17,4 +17,4 @@ void dumpBuffer(int * buf);
 /**
  * Calcul du coût final d'une commande
  */
-int howMuch(int nbPlaces, int cat, int nbEtudiant);
+float howMuch(int nbPlaces, int cat, int nbEtudiant);

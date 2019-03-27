@@ -143,6 +143,13 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
+		// réception du prix
+		float prixFinal;
+		if ((rd = read(sock, &prixFinal, sizeof(float))) != sizeof(float)) {
+			perror("read");
+			exit(EXIT_FAILURE);
+		}
+
 		// traitement réponse
 		char confirmation = 'z';
 		if (buf[1] == nbPlaces) {
@@ -150,13 +157,13 @@ int main(int argc, char * argv[]) {
 			confirmation = 'o';
 			printf("Toutes les places sont disponibles.\n");
 			// affichage prix
-			printf("Prix total : %d€\n", buf[3]);
+			printf("Prix total : %f€\n", prixFinal);
 		} else if ((buf[1] < nbPlaces) && (buf[1] > 0)) {
 			// seule une partie des places est disponible
 			while ((confirmation != 'o') && (confirmation != 'n')) {
 				// affichage prix
 				printf("Il ne reste que %d places.\n", buf[1]);
-				printf("Prix total : %d€\n", buf[3]);
+				printf("Prix total : %f€\n", prixFinal);
 				printf("Voulez-vous les acheter ? [o/n] ");
 
 				if (fgets(input, sizeof(input), stdin) == NULL) continue;

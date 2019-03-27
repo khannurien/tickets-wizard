@@ -231,14 +231,13 @@ int main(int argc, char * argv[]) {
 				}
 
 				// traitement de la réponse de PLACES
-				int prixFinal = -1;
+				float prixFinal = -1;
 				int placesEffectives = -1;
 
 				if (buf[1] == nbPlaces) {
 					// toutes les places sont disponibles
 					// on calcule le prix final et on prépare l'envoi à ACHAT
 					prixFinal = howMuch(nbPlaces, cat, nbEtudiant);
-					buf[3] = prixFinal;
 				} else if (buf[1] < 0) {
 					// quelques places disponibles
 					placesEffectives = -buf[1];
@@ -246,7 +245,6 @@ int main(int argc, char * argv[]) {
 					if (nbEtudiant > placesEffectives) nbEtudiant = placesEffectives;
 					prixFinal = howMuch(placesEffectives, cat, nbEtudiant);
 					buf[1] *= -1;
-					buf[3] = prixFinal;
 				} else if (buf[1] == 0) {
 					// aucune place disponible
 					// on répond à ACHAT
@@ -259,6 +257,12 @@ int main(int argc, char * argv[]) {
 
 				// retransmission à ACHAT
 				if ((wr = write(service, buf, BUFSIZE)) != BUFSIZE) {
+					perror("write");
+					exit(EXIT_FAILURE);
+				}
+
+				// envoi du prix
+				if ((wr = write(service, &prixFinal, BUFSIZE)) != BUFSIZE) {
 					perror("write");
 					exit(EXIT_FAILURE);
 				}
