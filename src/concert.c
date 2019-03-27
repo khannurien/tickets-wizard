@@ -234,11 +234,7 @@ int main(int argc, char * argv[]) {
 				float prixFinal = -1;
 				int placesEffectives = -1;
 
-				if (buf[1] == nbPlaces) {
-					// toutes les places sont disponibles
-					// on calcule le prix final et on prépare l'envoi à ACHAT
-					prixFinal = howMuch(nbPlaces, cat, nbEtudiant);
-				} else if (buf[1] < 0) {
+				if (buf[1] < 0) {
 					// quelques places disponibles
 					placesEffectives = -buf[1];
 					// on calcule le prix final et on prépare la proposition à ACHAT
@@ -268,16 +264,12 @@ int main(int argc, char * argv[]) {
 				}
 
 				// attente confirmation d'ACHAT
-				if ((rd = read(service, buf, BUFSIZE)) == 0) {
+				if ((rd = read(service, buf, BUFSIZE)) < 0) {
 					// déconnexion ACHAT
 					printf("Client ACHAT déconnecté.\n");
 					printf("Restitution des places...\n");
 					// envoi désistement
-					if (placesEffectives != -1) {
-						buf[1] = -placesEffectives;
-					} else {
-						buf[1] = -nbPlaces;
-					}
+					buf[1] = -placesEffectives;
 
 					if ((wr = write(places_sock, buf, BUFSIZE)) != BUFSIZE) {
 						perror("write");
