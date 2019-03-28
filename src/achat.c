@@ -177,6 +177,7 @@ int main(int argc, char * argv[]) {
 			// buffer
 			char msg_clt[1024];
 			char msg_srv[1024];
+			char msg_id[1034];
 
 			fd_set from_chat, read_fds_whileChatting;
 			FD_ZERO(&from_chat);
@@ -187,6 +188,9 @@ int main(int argc, char * argv[]) {
 			printf("\nBienvenue dans le chat. Vous pouvez poser toutes vos questions :-)\n");
 			printf("Tapez /quit dès que vous souhaitez arrêter la conversation.\n\n");
 
+			printf(">> Moi : ");
+			fflush(stdout);
+			
 			// boucle de discussion
 			while (strncmp(msg_clt, "/quit", 5) != 0) {
 				read_fds_whileChatting = from_chat;
@@ -199,18 +203,15 @@ int main(int argc, char * argv[]) {
 
 				if (FD_ISSET(0, &read_fds_whileChatting)) {
 					// écriture message
+					printf("\n>> Moi : ");
+					fflush(stdout);
 					fgets(msg_clt, 1024, stdin);
-					printf("\n>> Moi : %s\n", msg_clt);
-
-					// nettoyage fin de ligne
-					msg_clt[strcspn(msg_clt, "\r\n")] = 0;
 
 					// ajout identifiant
-					char msg_id[1034];
-					strncat(msg_id, client_id, 8);
+					strncpy(msg_id, client_id, 8);
+					msg_id[8] = '\0';
 					strncat(msg_id, ": ", 2);
 					strncat(msg_id, msg_clt, 1024);
-					printf("%s\n", msg_id);
 
 					// envoi du message
 					size_t sd;
@@ -218,8 +219,6 @@ int main(int argc, char * argv[]) {
 						perror("sendto");
 						//exit(EXIT_FAILURE);
 					}
-
-					continue;
 				}
 
 				if (FD_ISSET(chat, &read_fds_whileChatting)) {
@@ -230,14 +229,14 @@ int main(int argc, char * argv[]) {
 						//return EXIT_FAILURE;
 					}
 
-					printf("\n<< Helper : %s\n\n", msg_srv);
+					printf("\n\n<< Helper : %s\n", msg_srv);
 
-					continue;
+					printf("\n>> Moi : ");	
 				}
-			}
 
-			// réinitialiser au message vide
-			strcpy(msg_clt, "");
+				// réinitialiser au message vide
+				strcpy(msg_clt, "");
+			}
 
 			// fermeture chat
 			close(chat);
@@ -281,7 +280,7 @@ int main(int argc, char * argv[]) {
 			confirmation = 'o';
 			printf("Toutes les places sont disponibles.\n");
 			// affichage prix
-			printf("Prix total : %f€\n", prixFinal);
+			printf("Prix total : %.2f€\n", prixFinal);
 		} else if ((buf[1] < nbPlaces) && (buf[1] > 0)) {
 			// seule une partie des places est disponible
 			while ((confirmation != 'o') && (confirmation != 'n')) {

@@ -146,7 +146,7 @@ int main(int argc, char * argv[]) {
             }
 
             // connexion client
-            printf("Demande d'ACHAT reçue...\n");
+            printf("Demande d'ACHAT reçue...\n\n");
 
             // réception demande client
             // fork
@@ -333,7 +333,7 @@ int main(int argc, char * argv[]) {
             // invite
             char buffer[1024];
 
-            printf("Tapez /prix pour modifier les prix.");
+            printf("Tapez /prix pour modifier les prix.\n");
             printf("Tapez /chat <id> pour répondre à un client.\n");
             fgets(buffer, 1024, stdin);
             printf("\n");
@@ -373,12 +373,9 @@ int main(int argc, char * argv[]) {
                 // écriture message
                 char msg_srv[1024];
 
-                printf("@%s: ", dest_str);
+                printf(">> @%s: ", dest_str);
                 fgets(msg_srv, 1024, stdin);
                 printf("\n");
-
-				// nettoyage fin de ligne
-				msg_srv[strcspn(msg_srv, "\r\n")] = 0;
                 
                 // recherche destinataire
                 int i, found = 0;
@@ -425,7 +422,6 @@ int main(int argc, char * argv[]) {
             // récupération identifiant
             char msg_id[8];
             strncpy(msg_id, msg_clt, 8);
-            printf("string id : %s\n", msg_id);
 
             // recherche émetteur
             int i, found = 0;
@@ -452,7 +448,7 @@ int main(int argc, char * argv[]) {
             }
 
             // affichage
-            printf("%s\n", msg_clt);
+            printf("\n<< %s\n", msg_clt);
 
             // tour suivant
             continue;
