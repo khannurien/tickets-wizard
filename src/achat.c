@@ -78,56 +78,78 @@ int main(int argc, char * argv[]) {
 		}
 
 		// connexion OK
-		printf("Connexion acceptée.\n");
+		printf("Connexion acceptée.\n\n");
 
 		// identifiant de demande
-		int timestamp = (int) time(NULL);
+		srand(time(NULL));
+		int rand_id = rand() % 90000000 + 10000000;
+		char client_id[8];
+		sprintf(client_id, "%d", rand_id);
 		// entrée utilisateur
-		int nbPlaces;
-		int cat;
-		int nbEtudiant;
+		int nbPlaces = -1;
+		int cat = -1;
+		int nbEtudiant = -1;
 
 		// vérification de l'entrée utilisateur
 		char * p, input[256];
-		int doWeChat = 0;
 		
-		printf("Nouvelle commande. Combien de places ?\n");
-		while (fgets(input, sizeof(input), stdin)) {
-			nbPlaces = strtol(input, &p, 10);
+		printf("Nouvelle commande.\n");
+		printf("Vous pouvez taper '/aide' à tout moment.\n");
+		printf("Votre commande sera alors annulée et vous serez mis-e en relation avec un-e conseiller-ère.\n");
+		printf("Après votre échange, vous serez libre de procéder à une nouvelle commande.\n\n");
 
-			if (p == input || * p != '\n') {
-				printf("Veuillez entrer une valeur entière : ");
-			} else if (nbPlaces <= 0) {
-				printf("Veuillez entrer une valeur supérieure à 0 : ");
-			} else break;
+		while (1) {
+			printf("Combien de places ?\n");
+			while (fgets(input, sizeof(input), stdin)) {
+				// demande de chat ou valeur ?
+				if (strncmp(input, "/aide", 5) == 0) break;
+				nbPlaces = strtol(input, &p, 10);
+
+				if (p == input || * p != '\n') {
+					printf("Veuillez entrer une valeur entière : ");
+				} else if (nbPlaces <= 0) {
+					printf("Veuillez entrer une valeur supérieure à 0 : ");
+				} else break;
+			}
+
+			// sortie vers le chat
+			if (strncmp(input, "/aide", 5) == 0) break;
+
+			printf("Quelle catégorie ?\n");
+			while (fgets(input, sizeof(input), stdin)) {
+				// demande de chat ou valeur ?
+				if (strncmp(input, "/aide", 5) == 0) break;
+				cat = strtol(input, &p, 10);
+
+				if (p == input || * p != '\n') {
+					printf("Veuillez entrer une valeur entière : ");
+				} else if ((cat != 1) && (cat != 2) && (cat != 3)) {
+					printf("Veuillez choisir une catégorie entre 1 et 3 : ");
+				} else break;
+			}
+
+			// sortie vers le chat
+			if (strncmp(input, "/aide", 5) == 0) break; 
+
+			printf("Combien de places en tarif étudiant ?\n");
+			while (fgets(input, sizeof(input), stdin)) {
+				// demande de chat ou valeur ?
+				if (strncmp(input, "/aide", 5) == 0) break;
+				nbEtudiant = strtol(input, &p, 10);
+
+				if (p == input || * p != '\n') {
+					printf("Veuillez entrer une valeur entière : ");
+				} else if ((nbEtudiant > nbPlaces) || (nbEtudiant < 0)) {
+					printf("Veuillez entrer une valeur entre 0 et le nombre de places commandées : ");
+				} else break;
+			}
+
+			// sortie vers la commande
+			break;
 		}
 
-		printf("Quelle catégorie ?\n");
-		while (fgets(input, sizeof(input), stdin)) {
-			cat = strtol(input, &p, 10);
-
-			if (p == input || * p != '\n') {
-				printf("Veuillez entrer une valeur entière : ");
-			} else if ((cat != 1) && (cat != 2) && (cat != 3)) {
-				printf("Veuillez choisir une catégorie entre 1 et 3 : ");
-			} else break;
-		}
-
-		printf("Combien de places en tarif étudiant ?\n");
-		while (fgets(input, sizeof(input), stdin)) {
-			nbEtudiant = strtol(input, &p, 10);
-
-			if (p == input || * p != '\n') {
-				printf("Veuillez entrer une valeur entière : ");
-			} else if ((nbEtudiant > nbPlaces) || (nbEtudiant < 0)) {
-				printf("Veuillez entrer une valeur entre 0 et le nombre de places commandées : ");
-			} else break;
-		}
-		
-		// test chat
-		doWeChat = 1;
-
-		if (doWeChat) {
+		// chat ?
+		if (strncmp(input, "/aide", 5) == 0) {
 			// socket émetteur
 			int chat;
 			struct sockaddr_in adresseReceveur;
@@ -162,8 +184,11 @@ int main(int argc, char * argv[]) {
 			FD_SET(0, &from_chat); // stdin
 			FD_SET(chat, &from_chat); // socket chat
 
+			printf("\nBienvenue dans le chat. Vous pouvez poser toutes vos questions :-)\n");
+			printf("Tapez /quit dès que vous souhaitez arrêter la conversation.\n\n");
+
 			// boucle de discussion
-			while (1) {
+			while (strncmp(msg_clt, "/quit", 5) != 0) {
 				read_fds_whileChatting = from_chat;
 
 				int select_fds_chat;
@@ -174,17 +199,22 @@ int main(int argc, char * argv[]) {
 
 				if (FD_ISSET(0, &read_fds_whileChatting)) {
 					// écriture message
-					printf("@%s: ", "dest");
 					fgets(msg_clt, 1024, stdin);
-					printf("%s\n", msg_clt);
+					printf("\n>> Moi : %s\n", msg_clt);
 
-					// quitter ?
-					if (strncmp(msg_clt, "/quit", 4) == 0) break;
+					// nettoyage fin de ligne
+					msg_clt[strcspn(msg_clt, "\r\n")] = 0;
 
-					printf("\n");
+					// ajout identifiant
+					char msg_id[1034];
+					strncat(msg_id, client_id, 8);
+					strncat(msg_id, ": ", 2);
+					strncat(msg_id, msg_clt, 1024);
+					printf("%s\n", msg_id);
+
 					// envoi du message
 					size_t sd;
-					if ((sd = sendto(chat, msg_clt, strlen(msg_clt) + 1, 0, (struct sockaddr *) &adresseReceveur, (socklen_t) lgadresseReceveur)) != strlen(msg_clt + 1)) {
+					if ((sd = sendto(chat, msg_id, strlen(msg_id) + 1, 0, (struct sockaddr *) &adresseReceveur, (socklen_t) lgadresseReceveur)) != strlen(msg_id) + 1) {
 						perror("sendto");
 						//exit(EXIT_FAILURE);
 					}
@@ -200,11 +230,14 @@ int main(int argc, char * argv[]) {
 						//return EXIT_FAILURE;
 					}
 
-					printf("%s: %s\n", "src", msg_srv);
+					printf("\n<< Helper : %s\n\n", msg_srv);
 
 					continue;
 				}
 			}
+
+			// réinitialiser au message vide
+			strcpy(msg_clt, "");
 
 			// fermeture chat
 			close(chat);
@@ -215,7 +248,7 @@ int main(int argc, char * argv[]) {
 
 		// buffer
 		int buf[BUFELEM];
-		buf[0] = timestamp;
+		buf[0] = rand_id;
 		buf[1] = nbPlaces;
 		buf[2] = cat;
 		buf[3] = nbEtudiant;

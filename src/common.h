@@ -5,6 +5,11 @@
 #define BUFSIZE (4 * sizeof(int))
 
 /**
+ * Nombre de clients dans le chat
+ */
+#define NB_CHATMAX 100
+
+/**
  * Prix des places par catégorie
  */
 int prixPlaces[3];
