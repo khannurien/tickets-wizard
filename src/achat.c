@@ -217,7 +217,6 @@ int main(int argc, char * argv[]) {
 					size_t sd;
 					if ((sd = sendto(chat, msg_id, strlen(msg_id) + 1, 0, (struct sockaddr *) &adresseReceveur, (socklen_t) lgadresseReceveur)) != strlen(msg_id) + 1) {
 						perror("sendto");
-						//exit(EXIT_FAILURE);
 					}
 				}
 
@@ -226,12 +225,12 @@ int main(int argc, char * argv[]) {
 					size_t rv;
 					if ((rv = recvfrom(chat, msg_srv, sizeof(msg_srv), 0, (struct sockaddr *) &adresseReceveur, (socklen_t *) &lgadresseReceveur)) == -1) {
 						perror("recvfrom");
-						//return EXIT_FAILURE;
 					}
 
 					printf("\n\n<< Helper : %s\n", msg_srv);
 
 					printf("\n>> Moi : ");	
+					fflush(stdout);
 				}
 
 				// réinitialiser au message vide
@@ -286,7 +285,7 @@ int main(int argc, char * argv[]) {
 			while ((confirmation != 'o') && (confirmation != 'n')) {
 				// affichage prix
 				printf("Il ne reste que %d places.\n", buf[1]);
-				printf("Prix total : %f€\n", prixFinal);
+				printf("Prix total : %.2f€\n", prixFinal);
 				printf("Voulez-vous les acheter ? [o/n] ");
 
 				if (fgets(input, sizeof(input), stdin) == NULL) continue;
@@ -327,6 +326,8 @@ int main(int argc, char * argv[]) {
 			perror("write");
 			exit(EXIT_FAILURE);
 		}
+
+		printf("\nCommande validée !\n");
 
 		// fermeture connexion à CONCERT
 		close(sock);

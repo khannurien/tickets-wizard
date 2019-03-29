@@ -109,7 +109,8 @@ int main(int argc, char * argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-    printf("CONCERT\n");
+    printf("CONCERT\n\n");
+    printf("Appuyez sur Entrée à tout moment pour afficher la liste des commandes organisateur.\n\n");
 
 	// ensemble des descripteurs à surveiller
 	fd_set from_master, read_fds;
@@ -190,7 +191,7 @@ int main(int argc, char * argv[]) {
                     }
 
                     // connexion à PLACES
-                    printf("Connexion au serveur PLACES...\n");
+                    printf("\nConnexion au serveur PLACES...\n");
 
                     // en tant que client PLACES
                     // port client
@@ -328,13 +329,13 @@ int main(int argc, char * argv[]) {
 		if (FD_ISSET(0, &read_fds)) {
           	// on consomme le premier retour chariot
 			char c;
-			while ((c = getchar()) != '\n' && (c != EOF));
+			while ((c = getchar()) != '\n' && (c != EOF)) {}
 
             // invite
             char buffer[1024];
 
             printf("Tapez /prix pour modifier les prix.\n");
-            printf("Tapez /chat <id> pour répondre à un client.\n");
+            printf("Tapez /chat <id> pour répondre à un client.\n\n");
             fgets(buffer, 1024, stdin);
             printf("\n");
 
@@ -392,7 +393,6 @@ int main(int argc, char * argv[]) {
                 size_t sd;
                 if ((sd = sendto(chat, msg_srv, strlen(msg_srv) + 1, 0, (struct sockaddr *) &adresseEmetteur[i], (socklen_t) lgadresseEmetteur[i])) != strlen(msg_srv) + 1) {
                     perror("sendto");
-                    //exit(EXIT_FAILURE);
                 }
 
                 // tour suivant
@@ -416,7 +416,6 @@ int main(int argc, char * argv[]) {
             size_t rv;
             if ((rv = recvfrom(chat, msg_clt, sizeof(msg_clt), MSG_PEEK, (struct sockaddr *) &addrTmp, (socklen_t *) &lgaddrTmp)) == -1) {
                 perror("recvfrom");
-                //return EXIT_FAILURE;
             }
 
             // récupération identifiant
@@ -444,7 +443,6 @@ int main(int argc, char * argv[]) {
             // attribution émetteur
             if ((rv = recvfrom(chat, msg_clt, sizeof(msg_clt), 0, (struct sockaddr *) &adresseEmetteur[i], (socklen_t *) &lgadresseEmetteur[i])) == -1) {
                 perror("recvfrom");
-                //return EXIT_FAILURE;
             }
 
             // affichage
