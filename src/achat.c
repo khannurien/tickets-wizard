@@ -329,8 +329,6 @@ int main(int argc, char * argv[]) {
 			exit(EXIT_FAILURE);
 		}
 
-		printf("\nCommande validée !\n");
-
 		// fermeture connexion à CONCERT
 		close(sock);
 

@@ -389,7 +389,7 @@ int main(int argc, char * argv[]) {
 					}
 				}
 
-				if (! found) printf("Destinataire inconnu.\n");
+				if (! found) printf("Destinataire inconnu.\n\n");
 
 				// envoi du message
 				size_t sd;
@@ -401,7 +401,7 @@ int main(int argc, char * argv[]) {
 				continue;
 			} else {
 				// mauvaise commande
-				printf("Commande inconnue.\n");
+				printf("Commande inconnue.\n\n");
 
 				// tour suivant
 				continue;

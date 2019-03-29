@@ -215,8 +215,8 @@ int main(int argc, char * argv[]) {
 				printf("Seulement %d places disponibles.\n", nbPlaces);
 			} else {
 				// commande OK
-				// retourne la valeur demandée en positif
-				result = -valeur;
+				// retourne la valeur demandée en négatif
+				result = valeur;
 				int i;
 				for (i = 0; i < -valeur; i++) placeRemove(cat);
 				printf("Commande de %d places OK.\n", -valeur);
@@ -231,7 +231,11 @@ int main(int argc, char * argv[]) {
 		dumpPlaces();
 
 		// écriture code retour
-		buf[1] = result;
+		if (result > 0) {
+			buf[1] = valeur;
+		} else {
+			buf[1] = result;
+		}
 
 		// réponse au client
 		ssize_t wr;
@@ -242,13 +246,12 @@ int main(int argc, char * argv[]) {
 
 		// lecture réponse finale
 		if ((rd = read(service, buf, BUFSIZE)) != BUFSIZE) {
-			dumpBuffer(buf);
 			perror("read");
 			return EXIT_FAILURE;
 		}
 
 		if (buf[1] < 0) {
-			// désistement
+			// désistement ou déconnexion utilisateur
 			// retourne la valeur demandée
 			int i;
 			for (i = 0; i < -buf[1]; i++) placeAdd(cat);
