@@ -3,6 +3,15 @@
 #include "common.h"
 
 /**
+ * Tickets Wizard
+ * https://github.com/khannurien/tickets-wizard/
+ * Vincent Lannurien <21002854>
+ * 
+ * UBO Brest, 2019
+ * GNU GPL v3
+ */
+
+/**
  * Affichage des données du buffer
  */
 void dumpBuffer(int * buf) {

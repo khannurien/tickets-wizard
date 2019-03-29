@@ -8,12 +8,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "common.h"
 
 /**
  * Tickets Wizard
- * Vincent Lannurien
+ * https://github.com/khannurien/tickets-wizard/
+ * Vincent Lannurien <21002854>
+ * 
  * UBO Brest, 2019
  * GNU GPL v3
  * 
@@ -30,14 +31,6 @@
  * 	- zéro s'il ne reste plus de places.
  * 
  */
-
-/**
- * Nombre de places
- */
-#define MAXPLACES 300
-#define MAXCAT1 50
-#define MAXCAT2 150
-#define MAXCAT3 100
 
 /**
  * Tableau des places
@@ -59,8 +52,6 @@ void dumpPlaces() {
 	for (i = 0; i < MAXPLACES; i++) {
 		if (PLACES[i] == 0) {
 			printf("Emplacement %d | Place réservée.\n", i);
-		} else {
-			//printf("Emplacement %d | Catégorie %d\n", i, (PLACES[i]));
 		}
 	}
 }

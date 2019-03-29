@@ -15,7 +15,9 @@
 
 /**
  * Tickets Wizard
- * Vincent Lannurien
+ * https://github.com/khannurien/tickets-wizard/
+ * Vincent Lannurien <21002854>
+ * 
  * UBO Brest, 2019
  * GNU GPL v3
  * 
@@ -232,10 +234,10 @@ int main(int argc, char * argv[]) {
 					printf("\n>> Moi : ");	
 					fflush(stdout);
 				}
-
-				// réinitialiser au message vide
-				strcpy(msg_clt, "");
 			}
+
+			// réinitialiser au message vide
+			strcpy(msg_clt, "");
 
 			// fermeture chat
 			close(chat);

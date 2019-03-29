@@ -1,4 +1,21 @@
 /**
+ * Tickets Wizard
+ * https://github.com/khannurien/tickets-wizard/
+ * Vincent Lannurien <21002854>
+ * 
+ * UBO Brest, 2019
+ * GNU GPL v3
+ */
+
+/**
+ * Nombre de places
+ */
+#define MAXPLACES 300
+#define MAXCAT1 50
+#define MAXCAT2 150
+#define MAXCAT3 100
+
+/**
  * Taille du buffer
  */
 #define BUFELEM 4
