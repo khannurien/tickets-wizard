@@ -3,6 +3,15 @@
 #include "common.h"
 
 /**
+ * Tickets Wizard
+ * https://github.com/khannurien/tickets-wizard/
+ * Vincent Lannurien <21002854>
+ * 
+ * UBO Brest, 2019
+ * GNU GPL v3
+ */
+
+/**
  * Affichage des données du buffer
  */
 void dumpBuffer(int * buf) {
@@ -15,19 +24,19 @@ void dumpBuffer(int * buf) {
 /**
  * Calcul du coût final d'une commande
  */
-int howMuch(int nbPlaces, int cat, int nbEtudiant) {
-	int result = 0;
+float howMuch(int nbPlaces, int cat, int nbEtudiant) {
+	float result = 0;
 	int prixPlace;
 
 	switch (cat) {
 		case 1:
-			prixPlace = 50;
+			prixPlace = prixPlaces[0];
 			break;
 		case 2:
-			prixPlace = 30;
+			prixPlace = prixPlaces[1];
 			break;
 		case 3:
-			prixPlace = 20;
+			prixPlace = prixPlaces[2];
 			break;
 		default:
 			perror("howMuch");
